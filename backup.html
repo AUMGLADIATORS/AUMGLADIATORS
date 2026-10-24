@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW ARENA: ECLIPSE // Martial Arts & Shadow Energy</title>
+    <style>
+        :root {
+            --cyan: #00f3ff;
+            --purple: #b829ff;
+            --crimson: #ff1e56;
+            --gold: #ffcc00;
+            --emerald: #00ff88;
+            --bg: #05050a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #140a24 0%, #040308 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: min(96vw, calc(94vh * (16 / 9)));
+            aspect-ratio: 16 / 9;
+            max-width: 1152px;
+            border: 2px solid rgba(184, 41, 255, 0.5);
+            border-radius: 6px;
+            box-shadow: 0 0 45px rgba(184, 41, 255, 0.25), inset 0 0 30px rgba(0, 243, 255, 0.12);
+            background: #05040a;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 2.5%;
+            left: 3%;
+            right: 3%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        .fighter-hud {
+            width: 42%;
+        }
+
+        .fighter-name {
+            font-size: clamp(11px, 1.3vw, 15px);
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            text-shadow: 0 2px 6px #000;
+        }
+
+        .hp-bar-outer {
+            width: 100%;
+            height: clamp(14px, 1.8vw, 20px);
+            background: rgba(10, 8, 20, 0.85);
+            border: 2px solid #556;
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .hp-bar-inner {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff1e56, #ff7700);
+            transition: width 0.12s ease-out;
+        }
+
+        #p1-hp {
+            background: linear-gradient(90deg, #00c8ff, #00ff88);
+        }
+
+        .shadow-bar-outer {
+            width: 82%;
+            height: clamp(8px, 1vw, 11px);
+            background: rgba(10, 8, 20, 0.85);
+            border: 1px solid #446;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .shadow-bar-inner {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #7700ff, #00f3ff);
+            box-shadow: 0 0 10px var(--cyan);
+            transition: width 0.1s;
+        }
+
+        #center-hud {
+            text-align: center;
+            min-width: 110px;
+        }
+
+        #round-badge {
+            font-size: clamp(10px, 1.1vw, 12px);
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            font-weight: 700;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px #000;
+        }
+
+        #timer-box {
+            font-size: clamp(22px, 2.8vw, 34px);
+            font-weight: 900;
+            font-family: monospace;
+            color: #fff;
+            text-shadow: 0 0 12px var(--purple);
+        }
+
+        /* Tutorial Banner */
+        #tutorial-panel {
+            position: absolute;
+            bottom: 3%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 88%;
+            max-width: 740px;
+            background: linear-gradient(180deg, rgba(16, 12, 34, 0.94), rgba(8, 6, 18, 0.96));
+            border: 1px solid var(--cyan);
+            border-left: 5px solid var(--gold);
+            padding: 10px 18px;
+            border-radius: 6px;
+            z-index: 7;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #tut-step {
+            font-size: clamp(10px, 1.1vw, 12px);
+            font-family: monospace;
+            color: var(--gold);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        #tut-text {
+            font-size: clamp(11px, 1.25vw, 14px);
+            color: #eef;
+            line-height: 1.35;
+        }
+
+        #tut-progress {
+            font-family: monospace;
+            font-size: clamp(12px, 1.3vw, 15px);
+            font-weight: 700;
+            color: var(--emerald);
+            background: rgba(0, 255, 136, 0.12);
+            border: 1px solid var(--emerald);
+            padding: 6px 12px;
+            border-radius: 4px;
+            min-width: 95px;
+            text-align: center;
+            margin-left: 14px;
+        }
+
+        /* Utility Top-Right Controls */
+        #util-bar {
+            position: absolute;
+            top: 15%;
+            right: 3%;
+            z-index: 8;
+            display: flex;
+            gap: 8px;
+        }
+
+        .small-btn {
+            background: rgba(14, 12, 28, 0.9);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 5px 10px;
+            font-size: clamp(9px, 1vw, 11px);
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: 0.15s;
+        }
+
+        .small-btn:hover {
+            background: var(--cyan);
+            color: #000;
+        }
+
+        /* Modals */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(18, 10, 36, 0.92), rgba(4, 3, 10, 0.96));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            padding: 3%;
+            backdrop-filter: blur(6px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        h1 {
+            font-size: clamp(28px, 4.4vw, 50px);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: -3px 0 var(--crimson), 3px 0 var(--cyan);
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: var(--cyan);
+            letter-spacing: 2.5px;
+            font-size: clamp(10px, 1.2vw, 13px);
+            text-transform: uppercase;
+            margin-bottom: 2.5%;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 92%;
+            max-width: 680px;
+            margin-bottom: 3%;
+            text-align: left;
+        }
+
+        .card {
+            background: linear-gradient(145deg, rgba(24, 16, 46, 0.88), rgba(10, 8, 22, 0.88));
+            border: 1px solid rgba(184, 41, 255, 0.4);
+            padding: 10px 14px;
+            border-radius: 6px;
+        }
+
+        .card h3 {
+            font-size: clamp(11px, 1.15vw, 13px);
+            color: var(--gold);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .card p {
+            font-size: clamp(10.5px, 1.1vw, 12.5px);
+            color: #ddd;
+            line-height: 1.4;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .primary-btn {
+            background: linear-gradient(90deg, var(--crimson), var(--purple));
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 10px 26px;
+            font-size: clamp(12px, 1.3vw, 15px);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(255, 30, 86, 0.5);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .primary-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 28px rgba(0, 243, 255, 0.9);
+        }
+
+        .secondary-btn {
+            background: rgba(0, 243, 255, 0.15);
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            padding: 10px 20px;
+            font-size: clamp(11px, 1.2vw, 14px);
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.15s;
+        }
+
+        .secondary-btn:hover {
+            background: var(--cyan);
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="1024" height="576"></canvas>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="fighter-hud">
+                <div class="fighter-name">
+                    <span style="color:var(--cyan);">KENSEI [SHADOW BLADE]</span>
+                    <span id="p1-hp-txt">100%</span>
+                </div>
+                <div class="hp-bar-outer">
+                    <div class="hp-bar-inner" id="p1-hp"></div>
+                </div>
+                <div class="shadow-bar-outer">
+                    <div class="shadow-bar-inner" id="p1-shadow"></div>
+                </div>
+            </div>
+
+            <div id="center-hud">
+                <div id="round-badge">DOJO TRAINING</div>
+                <div id="timer-box">99</div>
+            </div>
+
+            <div class="fighter-hud" style=" display:flex; flex-direction:column; align-items:flex-end;">
+                <div class="fighter-name" style="width:100%;">
+                    <span id="p2-hp-txt">100%</span>
+                    <span id="p2-name" style="color:var(--crimson);">SHADOW MASTER</span>
+                </div>
+                <div class="hp-bar-outer">
+                    <div class="hp-bar-inner" id="p2-hp"></div>
+                </div>
+                <div class="shadow-bar-outer">
+                    <div class="shadow-bar-inner" id="p2-shadow"
+                        style="background:linear-gradient(90deg,#ff1e56,#ff9900);"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Utility Buttons -->
+        <div id="util-bar">
+            <button class="small-btn" id="btn-skip-tut">SKIP DOJO [T]</button>
+            <button class="small-btn" id="btn-mute">AUDIO: ON [M]</button>
+        </div>
+
+        <!-- Interactive Dojo Tutorial Banner -->
+        <div id="tutorial-panel">
+            <div>
+                <div id="tut-step">DOJO LESSON 1/4: FOOTWORK & ACROBATICS</div>
+                <div id="tut-text">Use <b>A / D</b> to Walk, <b>W</b> to Jump, and <b>SPACE</b> to Shadow-Dash through
+                    your opponent!</div>
+            </div>
+            <div id="tut-progress">0 / 3</div>
+        </div>
+
+        <!-- START OVERLAY -->
+        <div id="start-overlay" class="overlay">
+            <h1>SHADOW ARENA: ECLIPSE</h1>
+            <div class="subtitle">Silhouette Weapon Combat // 6 Unique Arenas & Slash FX Engine</div>
+            <div class="grid-cards">
+                <div class="card">
+                    <h3>1. Footwork & Evasion</h3>
+                    <p><b>A / D</b> or <b>Left / Right</b>: Move<br>
+                        <b>W / Up</b>: High Jump &nbsp;|&nbsp; <b>S / Down</b>: Guard / Parry<br>
+                        <b>SPACE</b>: Shadow Dash (Phase through attacks!)
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>2. Katana & Martial Arts</h3>
+                    <p><b>J</b>: Fast Katana Slash Combo (3-Hit Chain)<br>
+                        <b>K</b>: Heavy Spinning Kick (Guard Breaker)<br>
+                        <b>L</b>: Kunai / Shadow Shuriken Projectile
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>3. Shadow Form Eruption [R]</h3>
+                    <p>Fill your <b>Shadow Bar</b> by landing or blocking hits. Press <b>R</b> to unleash <b>Shadow
+                            Eruption</b>—dealing massive shockwave damage and entering glowing Shadow Form!</p>
+                </div>
+                <div class="card">
+                    <h3>4. 6 Arenas + 5 Boss Stages</h3>
+                    <p>Train in the <b>Twilight Pagoda</b>, then battle across <b>Bamboo Forest, Floating Shrine,
+                            Volcano Forge, Imperial Fortress,</b> and <b>The Eclipse Void</b>!</p>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="primary-btn" id="btn-start-tut">ENTER DOJO TUTORIAL</button>
+                <button class="secondary-btn" id="btn-start-tourney">SKIP TO TOURNAMENT</button>
+            </div>
+        </div>
+
+        <!-- END / VICTORY OVERLAY -->
+        <div id="end-overlay" class="overlay hidden">
+            <h1 id="end-title">TOURNAMENT CHAMPION</h1>
+            <div class="subtitle" id="end-sub">ALL SHADOW WARLORDS DEFEATED</div>
+            <div class="card" style="min-width: 320px; margin-bottom: 20px; text-align:center;">
+                <h3>COMBAT SUMMARY</h3>
+                <p id="end-stats" style="font-size: 15px; margin-top: 8px; line-height: 1.8;"></p>
+            </div>
+            <div class="btn-row">
+                <button class="primary-btn" id="btn-replay">FIGHT AGAIN (TOURNAMENT)</button>
+                <button class="secondary-btn" id="btn-replay-tut">REPLAY DOJO TUTORIAL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // PROCEDURAL ORIENTAL SYNTH & MARTIAL ARTS SFX ENGINE (Web Audio API)
+        // ============================================================================
+        class DojoAudio {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.playing = false;
+                this.step = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                if (!this.playing) {
+                    this.playing = true;
+                    this.startSoundtrack();
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                document.getElementById('btn-mute').innerText = `AUDIO: ${this.muted ? 'OFF' : 'ON'} [M]`;
+            }
+
+            tone(freq, type, dur, vol = 0.12, slide = null) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                if (slide) osc.frequency.exponentialRampToValueAtTime(slide, now + dur);
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + dur);
+            }
+
+            noise(dur, vol = 0.15) {
+                if (this.muted || !this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * dur;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + dur);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+
+            slash() {
+                this.tone(580, 'sawtooth', 0.12, 0.1, 140);
+                this.noise(0.09, 0.12);
+            }
+            heavyKick() {
+                this.tone(240, 'triangle', 0.18, 0.16, 55);
+                this.noise(0.14, 0.15);
+            }
+            hitConfirm(heavy = false) {
+                this.tone(heavy ? 120 : 180, 'square', heavy ? 0.25 : 0.15, 0.2, 40);
+                this.noise(heavy ? 0.2 : 0.12, 0.22);
+            }
+            clankParry() {
+                this.tone(1100, 'triangle', 0.15, 0.15, 1600);
+                setTimeout(() => this.tone(1450, 'sine', 0.18, 0.12), 40);
+            }
+            dash() { this.tone(360, 'sine', 0.15, 0.1, 110); }
+            shuriken() { this.tone(920, 'sawtooth', 0.1, 0.08, 320); }
+            shadowEruption() {
+                this.tone(85, 'sawtooth', 0.65, 0.25, 420);
+                this.noise(0.45, 0.25);
+                setTimeout(() => this.tone(520, 'triangle', 0.4, 0.18, 110), 120);
+            }
+            gong() {
+                [220, 330, 440, 660].forEach((f, i) => {
+                    setTimeout(() => this.tone(f, 'triangle', 0.35, 0.12), i * 70);
+                });
+            }
+
+            // Japanese Hirajoshi Pentatonic Scale Combat Music
+            startSoundtrack() {
+                const scale = [146.83, 164.81, 174.61, 220.00, 233.08, 293.66];
+                const pattern = [0, 2, 3, 2, 4, 3, 1, 0, 0, 3, 5, 4, 3, 2, 1, 0];
+                setInterval(() => {
+                    if (this.muted || !this.ctx || game.paused) return;
+                    const freq = scale[pattern[this.step % pattern.length]];
+                    const mult = game.mode === 'tourney' ? 1.08 + game.stageIndex * 0.04 : 1.0;
+                    if (this.step % 2 === 0) {
+                        this.tone(freq * 0.5 * mult, 'triangle', 0.16, 0.05, 45);
+                    }
+                    this.tone(freq * mult, 'sawtooth', 0.12, 0.03);
+                    this.step++;
+                }, 175);
+            }
+        }
+
+        const sfx = new DojoAudio();
+
+        // ============================================================================
+        // MULTI-ARENA PROCEDURAL BACKDROP GENERATOR (6 Distinct Stages)
+        // ============================================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const GROUND_Y = 475;
+
+        const bgCanvas = document.createElement('canvas');
+        bgCanvas.width = 1024;
+        bgCanvas.height = 576;
+        const bgCtx = bgCanvas.getContext('2d');
+
+        let currentArenaTheme = 'dojo';
+
+        function buildArenaBackdrop(theme) {
+            currentArenaTheme = theme;
+            bgCtx.clearRect(0, 0, 1024, 576);
+
+            if (theme === 'dojo') {
+                // ARENA 0: TWILIGHT PAGODA (DOJO TUTORIAL)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#090418');
+                sky.addColorStop(0.45, '#260d3d');
+                sky.addColorStop(0.8, '#591646');
+                sky.addColorStop(1, '#8c274c');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                const mx = 512, my = 215, mr = 135;
+                const moonGlow = bgCtx.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 1.9);
+                moonGlow.addColorStop(0, 'rgba(255, 230, 200, 0.95)');
+                moonGlow.addColorStop(0.55, 'rgba(255, 80, 130, 0.35)');
+                moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                bgCtx.fillStyle = moonGlow;
+                bgCtx.beginPath();
+                bgCtx.arc(mx, my, mr * 1.9, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                bgCtx.fillStyle = '#fff5ea';
+                bgCtx.beginPath();
+                bgCtx.arc(mx, my, mr, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                bgCtx.fillStyle = '#180926';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, GROUND_Y);
+                const peaks = [0, 120, 260, 410, 580, 740, 890, 1024];
+                const heights = [340, 260, 355, 295, 360, 250, 345, 310];
+                peaks.forEach((px, i) => bgCtx.lineTo(px, heights[i]));
+                bgCtx.lineTo(1024, GROUND_Y);
+                bgCtx.closePath();
+                bgCtx.fill();
+
+                // Pagoda on Left
+                bgCtx.fillStyle = '#0a0412';
+                const px = 155;
+                for (let tier = 0; tier < 3; tier++) {
+                    const ty = 320 - tier * 42;
+                    const tw = 95 - tier * 18;
+                    bgCtx.fillRect(px - tw * 0.55, ty, tw * 1.1, 32);
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(px - tw, ty + 4);
+                    bgCtx.quadraticCurveTo(px, ty - 18, px + tw, ty + 4);
+                    bgCtx.lineTo(px + tw * 0.75, ty + 12);
+                    bgCtx.lineTo(px - tw * 0.75, ty + 12);
+                    bgCtx.closePath();
+                    bgCtx.fill();
+                }
+                bgCtx.fillRect(px - 3, 185, 6, 40);
+
+                // Torii Gate on Right
+                const tx = 860, ty = 320;
+                bgCtx.fillRect(tx - 45, ty, 10, 155);
+                bgCtx.fillRect(tx + 35, ty, 10, 155);
+                bgCtx.fillRect(tx - 65, ty + 20, 130, 10);
+                bgCtx.beginPath();
+                bgCtx.moveTo(tx - 78, ty - 4);
+                bgCtx.quadraticCurveTo(tx, ty + 12, tx + 78, ty - 4);
+                bgCtx.lineTo(tx + 72, ty + 10);
+                bgCtx.lineTo(tx - 72, ty + 10);
+                bgCtx.closePath();
+                bgCtx.fill();
+
+                drawFloor('#12081c', '#1d0d2b', '#00f3ff');
+
+            } else if (theme === 'bamboo') {
+                // ARENA 1: WHISPERING BAMBOO FOREST (STAGE 1 - LYNX)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#021210');
+                sky.addColorStop(0.5, '#072a24');
+                sky.addColorStop(1, '#125444');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                // Misty Cyan Full Moon
+                const moonGlow = bgCtx.createRadialGradient(780, 150, 30, 780, 150, 180);
+                moonGlow.addColorStop(0, 'rgba(210, 255, 245, 0.9)');
+                moonGlow.addColorStop(0.5, 'rgba(0, 255, 170, 0.25)');
+                moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                bgCtx.fillStyle = moonGlow;
+                bgCtx.beginPath();
+                bgCtx.arc(780, 150, 180, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                bgCtx.fillStyle = '#eafffa';
+                bgCtx.beginPath();
+                bgCtx.arc(780, 150, 75, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                // Background & Foreground Bamboo Stalks
+                const stalks = [45, 95, 160, 215, 290, 370, 640, 710, 815, 880, 945, 990];
+                stalks.forEach((bx, idx) => {
+                    const isBack = idx % 2 === 0;
+                    bgCtx.strokeStyle = isBack ? 'rgba(4, 28, 22, 0.65)' : '#031712';
+                    bgCtx.lineWidth = isBack ? 10 : 16;
+                    const tilt = ((idx % 3) - 1) * 18;
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(bx, GROUND_Y);
+                    bgCtx.lineTo(bx + tilt, 0);
+                    bgCtx.stroke();
+
+                    // Bamboo joints
+                    bgCtx.strokeStyle = '#00ff88';
+                    bgCtx.lineWidth = 1.5;
+                    for (let y = 60; y < GROUND_Y; y += 75) {
+                        const curX = bx + tilt * ((GROUND_Y - y) / GROUND_Y);
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(curX - 9, y);
+                        bgCtx.lineTo(curX + 9, y);
+                        bgCtx.stroke();
+                    }
+                });
+
+                // Ground Fog
+                const fog = bgCtx.createLinearGradient(0, GROUND_Y - 120, 0, GROUND_Y);
+                fog.addColorStop(0, 'rgba(18, 84, 68, 0)');
+                fog.addColorStop(1, 'rgba(0, 255, 150, 0.22)');
+                bgCtx.fillStyle = fog;
+                bgCtx.fillRect(0, GROUND_Y - 120, 1024, 120);
+
+                drawFloor('#051a14', '#0b2e23', '#00ff88');
+
+            } else if (theme === 'shrine') {
+                // ARENA 2: FLOATING SHRINE OF TIME (STAGE 2 - ITU)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#140826');
+                sky.addColorStop(0.45, '#541644');
+                sky.addColorStop(0.8, '#b84429');
+                sky.addColorStop(1, '#ffcc44');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                // Golden Sun & Chrono Rings
+                bgCtx.fillStyle = '#fff5cc';
+                bgCtx.beginPath();
+                bgCtx.arc(512, 240, 110, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                bgCtx.strokeStyle = 'rgba(255, 230, 120, 0.6)';
+                bgCtx.lineWidth = 3;
+                bgCtx.beginPath();
+                bgCtx.ellipse(512, 240, 190, 50, -0.2, 0, Math.PI * 2);
+                bgCtx.stroke();
+                bgCtx.beginPath();
+                bgCtx.ellipse(512, 240, 240, 65, 0.25, 0, Math.PI * 2);
+                bgCtx.stroke();
+
+                // Floating Islands in Sky
+                const islands = [
+                    { x: 180, y: 210, w: 150, h: 45 },
+                    { x: 840, y: 180, w: 170, h: 55 }
+                ];
+                islands.forEach(isl => {
+                    bgCtx.fillStyle = '#1f0a24';
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(isl.x - isl.w / 2, isl.y);
+                    bgCtx.lineTo(isl.x + isl.w / 2, isl.y);
+                    bgCtx.lineTo(isl.x + isl.w * 0.25, isl.y + isl.h);
+                    bgCtx.lineTo(isl.x, isl.y + isl.h * 1.4);
+                    bgCtx.lineTo(isl.x - isl.w * 0.3, isl.y + isl.h);
+                    bgCtx.closePath();
+                    bgCtx.fill();
+
+                    // Mini Torii on Floating Island
+                    bgCtx.fillRect(isl.x - 20, isl.y - 45, 5, 45);
+                    bgCtx.fillRect(isl.x + 15, isl.y - 45, 5, 45);
+                    bgCtx.fillRect(isl.x - 30, isl.y - 40, 60, 6);
+                });
+
+                // Stone Lanterns on Arena Edges
+                [90, 934].forEach(lx => {
+                    bgCtx.fillStyle = '#16081c';
+                    bgCtx.fillRect(lx - 14, GROUND_Y - 90, 28, 90);
+                    bgCtx.fillRect(lx - 26, GROUND_Y - 105, 52, 16);
+                    bgCtx.fillStyle = '#ffcc00';
+                    bgCtx.fillRect(lx - 8, GROUND_Y - 82, 16, 22);
+                });
+
+                drawFloor('#240d26', '#3d1730', '#ffcc00');
+
+            } else if (theme === 'volcano') {
+                // ARENA 3: OBSIDIAN VOLCANO FORGE (STAGE 3 - EMPEROR TITAN)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#0f0204');
+                sky.addColorStop(0.5, '#3b070e');
+                sky.addColorStop(0.85, '#8a1c0e');
+                sky.addColorStop(1, '#ff5500');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                // Volcano Crater Cone
+                bgCtx.fillStyle = '#140406';
+                bgCtx.beginPath();
+                bgCtx.moveTo(120, GROUND_Y);
+                bgCtx.lineTo(410, 175);
+                bgCtx.lineTo(470, 195);
+                bgCtx.lineTo(550, 195);
+                bgCtx.lineTo(615, 175);
+                bgCtx.lineTo(900, GROUND_Y);
+                bgCtx.closePath();
+                bgCtx.fill();
+
+                // Glowing Lava Rivers on Volcano
+                bgCtx.strokeStyle = '#ff6600';
+                bgCtx.lineWidth = 6;
+                bgCtx.beginPath();
+                bgCtx.moveTo(485, 192);
+                bgCtx.quadraticCurveTo(460, 310, 390, GROUND_Y);
+                bgCtx.moveTo(535, 192);
+                bgCtx.quadraticCurveTo(575, 320, 640, GROUND_Y);
+                bgCtx.stroke();
+
+                // Chained Obsidian Monoliths
+                [140, 884].forEach(px => {
+                    bgCtx.fillStyle = '#0a0204';
+                    bgCtx.fillRect(px - 24, 140, 48, GROUND_Y - 140);
+                    bgCtx.strokeStyle = '#ff2200';
+                    bgCtx.lineWidth = 2;
+                    bgCtx.strokeRect(px - 24, 140, 48, GROUND_Y - 140);
+                });
+
+                drawFloor('#1c0506', '#330808', '#ff3300');
+
+            } else if (theme === 'fortress') {
+                // ARENA 4: BURNING IMPERIAL FORTRESS (STAGE 4 - SHOGUN)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#0a0612');
+                sky.addColorStop(0.4, '#2b0f1c');
+                sky.addColorStop(0.8, '#7a2216');
+                sky.addColorStop(1, '#ff8800');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                // Giant Imperial Castle Keep Silhouette in Center
+                bgCtx.fillStyle = '#0c050a';
+                bgCtx.fillRect(352, 230, 320, 245);
+                bgCtx.fillRect(392, 145, 240, 90);
+                // Castle Roofs
+                const roofs = [
+                    { y: 230, w: 380 },
+                    { y: 145, w: 290 },
+                    { y: 85, w: 180 }
+                ];
+                roofs.forEach(r => {
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(512 - r.w / 2, r.y + 10);
+                    bgCtx.quadraticCurveTo(512, r.y - 28, 512 + r.w / 2, r.y + 10);
+                    bgCtx.lineTo(512 + r.w * 0.42, r.y + 22);
+                    bgCtx.lineTo(512 - r.w * 0.42, r.y + 22);
+                    bgCtx.closePath();
+                    bgCtx.fill();
+                });
+
+                // Illuminated Castle Windows
+                bgCtx.fillStyle = '#ff9900';
+                for (let wx = 430; wx <= 580; wx += 50) {
+                    bgCtx.fillRect(wx, 175, 18, 28);
+                    bgCtx.fillRect(wx, 275, 18, 32);
+                }
+
+                // Tattered Samurai War Banners
+                [130, 230, 794, 894].forEach(bx => {
+                    bgCtx.fillStyle = '#080306';
+                    bgCtx.fillRect(bx - 3, 250, 6, 225);
+                    bgCtx.fillStyle = '#991122';
+                    bgCtx.fillRect(bx + 3, 265, 34, 95);
+                    bgCtx.strokeStyle = '#ffcc00';
+                    bgCtx.strokeRect(bx + 3, 265, 34, 95);
+                });
+
+                drawFloor('#1a0c08', '#2e140c', '#ffaa00');
+
+            } else if (theme === 'void') {
+                // ARENA 5: THE ECLIPSE VOID (STAGE 5 - SHADOW MIND)
+                const sky = bgCtx.createLinearGradient(0, 0, 0, GROUND_Y);
+                sky.addColorStop(0, '#020008');
+                sky.addColorStop(0.5, '#0f0326');
+                sky.addColorStop(1, '#29064d');
+                bgCtx.fillStyle = sky;
+                bgCtx.fillRect(0, 0, 1024, GROUND_Y);
+
+                // Black Hole Eclipse Singularity
+                const vx = 512, vy = 210, vr = 95;
+                const voidGlow = bgCtx.createRadialGradient(vx, vy, vr * 0.8, vx, vy, vr * 2.4);
+                voidGlow.addColorStop(0, '#00f3ff');
+                voidGlow.addColorStop(0.3, '#b829ff');
+                voidGlow.addColorStop(0.7, 'rgba(119, 0, 255, 0.2)');
+                voidGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                bgCtx.fillStyle = voidGlow;
+                bgCtx.beginPath();
+                bgCtx.arc(vx, vy, vr * 2.4, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                // Pitch Black Event Horizon Core
+                bgCtx.fillStyle = '#010004';
+                bgCtx.beginPath();
+                bgCtx.arc(vx, vy, vr, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = '#00f3ff';
+                bgCtx.lineWidth = 3;
+                bgCtx.stroke();
+
+                // Shattered Crystalline Void Monoliths
+                const shards = [90, 200, 310, 714, 824, 934];
+                shards.forEach((sx, i) => {
+                    const sh = 140 + (i % 3) * 45;
+                    const sy = 160 + (i % 2) * 50;
+                    bgCtx.fillStyle = '#0b031a';
+                    bgCtx.strokeStyle = i % 2 === 0 ? '#b829ff' : '#00f3ff';
+                    bgCtx.lineWidth = 2;
+                    bgCtx.beginPath();
+                    bgCtx.moveTo(sx, sy);
+                    bgCtx.lineTo(sx + 26, sy + sh * 0.4);
+                    bgCtx.lineTo(sx + 10, sy + sh);
+                    bgCtx.lineTo(sx - 22, sy + sh * 0.7);
+                    bgCtx.closePath();
+                    bgCtx.fill();
+                    bgCtx.stroke();
+                });
+
+                drawFloor('#080214', '#160430', '#b829ff');
+            }
+        }
+
+        function drawFloor(topColor, midColor, lineColor) {
+            const floorGrad = bgCtx.createLinearGradient(0, GROUND_Y, 0, 576);
+            floorGrad.addColorStop(0, topColor);
+            floorGrad.addColorStop(0.3, midColor);
+            floorGrad.addColorStop(1, '#030106');
+            bgCtx.fillStyle = floorGrad;
+            bgCtx.fillRect(0, GROUND_Y, 1024, 576 - GROUND_Y);
+
+            // Perspective Floor Grid Tiles
+            bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+            bgCtx.lineWidth = 1;
+            for (let x = -200; x <= 1224; x += 80) {
+                bgCtx.beginPath();
+                bgCtx.moveTo(512 + (x - 512) * 0.65, GROUND_Y);
+                bgCtx.lineTo(x, 576);
+                bgCtx.stroke();
+            }
+
+            bgCtx.strokeStyle = lineColor;
+            bgCtx.lineWidth = 2.5;
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, GROUND_Y);
+            bgCtx.lineTo(1024, GROUND_Y);
+            bgCtx.stroke();
+        }
+
+        buildArenaBackdrop('dojo');
+
+        // ============================================================================
+        // FIGHTER CLASS (Articulated Silhouette Skeleton + Weapon Slash Arcs)
+        // ============================================================================
+        class Fighter {
+            constructor(isPlayer, x, name, color) {
+                this.isPlayer = isPlayer;
+                this.x = x;
+                this.y = GROUND_Y;
+                this.vx = 0;
+                this.vy = 0;
+                this.facing = isPlayer ? 1 : -1;
+                this.name = name;
+                this.auraColor = color;
+
+                this.hp = 100;
+                this.maxHp = 100;
+                this.shadow = 0;
+                this.shadowForm = false;
+                this.shadowTimer = 0;
+
+                // States: 'idle', 'run', 'jump', 'guard', 'dash', 'attack', 'hit'
+                this.state = 'idle';
+                this.stateTimer = 0;
+                this.attackType = null; // 'slash1', 'slash2', 'slash3', 'kick', 'eruption'
+                this.comboStep = 0;
+                this.comboWindow = 0;
+                this.hasHitCurrentAttack = false;
+                this.dashCooldown = 0;
+                this.shurikenCooldown = 0;
+                this.animTick = Math.random() * 100;
+            }
+
+            get grounded() {
+                return this.y >= GROUND_Y;
+            }
+
+            startAttack(type) {
+                if (this.state === 'hit' || this.state === 'dash') return;
+                this.state = 'attack';
+                this.attackType = type;
+                this.hasHitCurrentAttack = false;
+
+                if (type === 'slash1') {
+                    this.stateTimer = 18;
+                    this.vx = this.facing * 5;
+                    sfx.slash();
+                    spawnSlashArc(this.x + this.facing * 35, this.y - 68, this.facing, -0.9, 1.1, 78, this.shadowForm ? '#00f3ff' : '#ffffff');
+                } else if (type === 'slash2') {
+                    this.stateTimer = 20;
+                    this.vx = this.facing * 6;
+                    sfx.slash();
+                    spawnSlashArc(this.x + this.facing * 42, this.y - 72, this.facing, 1.1, -0.9, 86, '#00f3ff');
+                } else if (type === 'slash3') {
+                    this.stateTimer = 26;
+                    this.vx = this.facing * 9;
+                    sfx.slash();
+                    spawnSlashArc(this.x + this.facing * 48, this.y - 65, this.facing, -1.4, 1.5, 102, '#ff1e56');
+                } else if (type === 'kick') {
+                    this.stateTimer = 24;
+                    this.vx = this.facing * 7.5;
+                    sfx.heavyKick();
+                    spawnSlashArc(this.x + this.facing * 30, this.y - 58, this.facing, -0.6, 0.9, 72, '#ffcc00');
+                } else if (type === 'eruption') {
+                    this.stateTimer = 34;
+                    this.vx = 0;
+                    this.shadow = 0;
+                    this.shadowForm = true;
+                    this.shadowTimer = 420;
+                    game.shake = 18;
+                    game.hitStop = 6;
+                    sfx.shadowEruption();
+                    spawnShadowPillars(this.x, this.facing);
+                }
+            }
+
+            triggerDash(dir) {
+                if (this.dashCooldown > 0 || this.state === 'hit') return;
+                this.state = 'dash';
+                this.stateTimer = 13;
+                this.dashCooldown = 32;
+                this.vx = dir * 15;
+                sfx.dash();
+                for (let i = 0; i < 8; i++) {
+                    spawnParticle(this.x, this.y - 50, '#00f3ff', 6);
+                }
+            }
+
+            throwShuriken() {
+                if (this.shurikenCooldown > 0 || this.state === 'hit' || this.state === 'attack') return;
+                this.shurikenCooldown = 40;
+                sfx.shuriken();
+                projectiles.push({
+                    owner: this,
+                    x: this.x + this.facing * 35,
+                    y: this.y - 68,
+                    vx: this.facing * 14,
+                    rot: 0,
+                    color: this.isPlayer ? '#00f3ff' : '#ff1e56'
+                });
+            }
+
+            update(opponent) {
+                this.animTick += 0.16;
+                if (this.dashCooldown > 0) this.dashCooldown--;
+                if (this.shurikenCooldown > 0) this.shurikenCooldown--;
+                if (this.comboWindow > 0) this.comboWindow--;
+
+                if (this.shadowForm) {
+                    this.shadowTimer--;
+                    if (Math.random() < 0.45) {
+                        spawnParticle(this.x + (Math.random() - 0.5) * 35, this.y - Math.random() * 95, this.auraColor, 3);
+                    }
+                    if (this.shadowTimer <= 0) this.shadowForm = false;
+                }
+
+                if (this.state === 'idle' || this.state === 'run' || this.state === 'guard') {
+                    this.facing = opponent.x >= this.x ? 1 : -1;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (!this.grounded) {
+                    this.vy += 0.72;
+                } else {
+                    this.y = GROUND_Y;
+                    this.vy = 0;
+                }
+
+                if (this.state !== 'dash') {
+                    this.vx *= 0.8;
+                }
+
+                this.x = Math.max(55, Math.min(canvas.width - 55, this.x));
+
+                if (this.state === 'attack' || this.state === 'hit' || this.state === 'dash') {
+                    this.stateTimer--;
+
+                    if (this.state === 'attack' && !this.hasHitCurrentAttack && this.stateTimer <= 14 && this.stateTimer >= 6) {
+                        this.checkHit(opponent);
+                    }
+
+                    if (this.stateTimer <= 0) {
+                        this.state = 'idle';
+                        this.attackType = null;
+                    }
+                }
+            }
+
+            checkHit(opponent) {
+                if (opponent.state === 'dash') return;
+
+                const reach = this.attackType === 'eruption' ? 230 : (this.attackType === 'slash3' ? 120 : 98);
+                const dx = (opponent.x - this.x) * this.facing;
+                const dy = Math.abs(opponent.y - this.y);
+
+                if (dx >= -25 && dx <= reach && dy < 95) {
+                    this.hasHitCurrentAttack = true;
+                    let dmg = 8;
+                    let heavy = false;
+
+                    if (this.attackType === 'slash2') dmg = 10;
+                    if (this.attackType === 'slash3') { dmg = 15; heavy = true; }
+                    if (this.attackType === 'kick') { dmg = 13; heavy = true; }
+                    if (this.attackType === 'eruption') { dmg = 26; heavy = true; }
+                    if (this.shadowForm) dmg *= 1.35;
+
+                    const isGuarding = opponent.state === 'guard' && this.attackType !== 'kick' && this.attackType !== 'eruption';
+
+                    if (isGuarding) {
+                        dmg *= 0.2;
+                        opponent.vx = this.facing * 6;
+                        sfx.clankParry();
+                        spawnHitSparks(opponent.x - opponent.facing * 20, opponent.y - 68, '#00f3ff', 14);
+                        opponent.shadow = Math.min(100, opponent.shadow + 12);
+                        if (opponent.isPlayer && game.mode === 'tutorial' && game.tutStage === 2) {
+                            advanceTutorial(1);
+                        }
+                    } else {
+                        opponent.hp = Math.max(0, opponent.hp - dmg);
+                        opponent.state = 'hit';
+                        opponent.stateTimer = heavy ? 20 : 13;
+                        opponent.vx = this.facing * (heavy ? 12 : 7);
+                        if (heavy) opponent.vy = -5;
+
+                        game.hitStop = heavy ? 5 : 3;
+                        game.shake = heavy ? 13 : 6;
+                        sfx.hitConfirm(heavy);
+                        spawnHitSparks(opponent.x, opponent.y - 65, heavy ? '#ff1e56' : '#ffcc00', heavy ? 26 : 16);
+                        spawnFloatingText(opponent.x, opponent.y - 110, heavy ? `CRITICAL -${Math.round(dmg)}` : `-${Math.round(dmg)}`, heavy ? '#ff1e56' : '#ffcc00');
+
+                        this.shadow = Math.min(100, this.shadow + 18);
+                        opponent.shadow = Math.min(100, opponent.shadow + 10);
+
+                        if (this.isPlayer && game.mode === 'tutorial') {
+                            if (game.tutStage === 1 && (this.attackType.startsWith('slash') || this.attackType === 'kick')) {
+                                advanceTutorial(1);
+                            } else if (game.tutStage === 3 && this.attackType === 'eruption') {
+                                advanceTutorial(1);
+                            }
+                        }
+                    }
+                    updateHUD();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                if (this.state === 'dash') ctx.globalAlpha = 0.45;
+                ctx.scale(this.facing, 1);
+
+                ctx.shadowColor = this.shadowForm ? this.auraColor : (this.isPlayer ? '#00f3ff' : this.auraColor);
+                ctx.shadowBlur = this.shadowForm ? 22 : 10;
+                ctx.strokeStyle = '#07050c';
+                ctx.fillStyle = '#07050c';
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                let bodyTilt = 0;
+                let armAngle = 0.3;
+                let swordAngle = -0.6;
+                let legSpread = Math.sin(this.animTick * 2) * (Math.abs(this.vx) > 0.8 ? 18 : 4);
+
+                if (this.state === 'guard') {
+                    bodyTilt = -0.15;
+                    armAngle = -0.9;
+                    swordAngle = 1.4;
+                } else if (this.state === 'hit') {
+                    bodyTilt = -0.45;
+                    armAngle = -1.2;
+                } else if (this.state === 'attack') {
+                    const progress = 1 - (this.stateTimer / 20);
+                    if (this.attackType === 'slash1') {
+                        bodyTilt = 0.3;
+                        armAngle = -1.4 + progress * 2.6;
+                        swordAngle = armAngle + 0.4;
+                    } else if (this.attackType === 'slash2') {
+                        bodyTilt = 0.35;
+                        armAngle = 1.2 - progress * 2.5;
+                        swordAngle = armAngle - 0.3;
+                    } else if (this.attackType === 'slash3') {
+                        bodyTilt = 0.5;
+                        armAngle = -1.8 + progress * 3.2;
+                        swordAngle = armAngle + 0.2;
+                    } else if (this.attackType === 'kick') {
+                        bodyTilt = -0.35;
+                        legSpread = 36;
+                    } else if (this.attackType === 'eruption') {
+                        bodyTilt = -0.2;
+                        armAngle = -1.6;
+                        swordAngle = -1.6;
+                    }
+                }
+
+                ctx.rotate(bodyTilt);
+
+                // Legs
+                ctx.lineWidth = 11;
+                ctx.beginPath();
+                ctx.moveTo(-4, -44);
+                ctx.lineTo(-14 - legSpread, -20);
+                ctx.lineTo(-18 - legSpread, 0);
+                ctx.moveTo(4, -44);
+                if (this.state === 'attack' && this.attackType === 'kick') {
+                    ctx.lineTo(32, -52);
+                    ctx.lineTo(58, -58);
+                } else {
+                    ctx.lineTo(14 + legSpread, -20);
+                    ctx.lineTo(18 + legSpread, 0);
+                }
+                ctx.stroke();
+
+                // Torso Silhouette
+                ctx.beginPath();
+                ctx.moveTo(-11, -42);
+                ctx.lineTo(11, -42);
+                ctx.lineTo(15, -82);
+                ctx.lineTo(-14, -82);
+                ctx.closePath();
+                ctx.fill();
+
+                // Flowing Headband / Scarf Ribbon
+                const wave = Math.sin(this.animTick * 2.2) * 8;
+                ctx.strokeStyle = this.isPlayer ? '#00f3ff' : this.auraColor;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-8, -92);
+                ctx.quadraticCurveTo(-28, -90 + wave, -46, -82 - wave);
+                ctx.stroke();
+
+                // Head & Conical Ronin Hat
+                ctx.fillStyle = '#07050c';
+                ctx.beginPath();
+                ctx.arc(0, -94, 11, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Glowing Eyes
+                ctx.fillStyle = this.isPlayer ? '#00f3ff' : this.auraColor;
+                ctx.fillRect(3, -96, 6, 3);
+
+                // Conical Kasa Hat
+                ctx.fillStyle = '#090612';
+                ctx.strokeStyle = this.isPlayer ? '#00f3ff' : this.auraColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(-28, -98);
+                ctx.lineTo(0, -114);
+                ctx.lineTo(28, -98);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Front Arm & Glowing Katana Blade
+                ctx.save();
+                ctx.translate(6, -76);
+                ctx.rotate(armAngle);
+                ctx.strokeStyle = '#07050c';
+                ctx.lineWidth = 9;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(24, 10);
+                ctx.stroke();
+
+                ctx.translate(24, 10);
+                ctx.rotate(swordAngle);
+                ctx.strokeStyle = this.shadowForm ? '#00f3ff' : (this.isPlayer ? '#b8f8ff' : this.auraColor);
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-6, 0);
+                ctx.lineTo(62, -12);
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.restore();
+            }
+        }
+
+        // ============================================================================
+        // VISUAL FX ARRAYS (Slash Arcs, Hit Sparks, Shadow Pillars, Ambient Weather)
+        // ============================================================================
+        let slashArcs = [];
+        let particles = [];
+        let projectiles = [];
+        let shadowPillars = [];
+        let floatingTexts = [];
+        let sakuraPetals = [];
+
+        for (let i = 0; i < 34; i++) {
+            sakuraPetals.push({
+                x: Math.random() * 1024,
+                y: Math.random() * 576,
+                vx: -0.8 - Math.random() * 1.2,
+                vy: 0.6 + Math.random() * 0.9,
+                size: 3 + Math.random() * 4,
+                rot: Math.random() * Math.PI * 2
+            });
+        }
+
+        function spawnSlashArc(x, y, facing, startAng, endAng, radius, color) {
+            slashArcs.push({ x, y, facing, startAng, endAng, radius, color, life: 1.0 });
+        }
+
+        function spawnHitSparks(x, y, color, count = 18) {
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = 3 + Math.random() * 11;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd - 2,
+                    size: 2 + Math.random() * 4,
+                    color,
+                    life: 1.0
+                });
+            }
+        }
+
+        function spawnParticle(x, y, color, size = 4) {
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 3,
+                vy: -1 - Math.random() * 3,
+                size,
+                color,
+                life: 1.0
+            });
+        }
+
+        function spawnShadowPillars(originX, facing) {
+            for (let i = 1; i <= 3; i++) {
+                shadowPillars.push({
+                    x: originX + facing * (i * 68),
+                    w: 38,
+                    life: 1.0
+                });
+            }
+        }
+
+        function spawnFloatingText(x, y, text, color) {
+            floatingTexts.push({ x, y, text, color, life: 1.0 });
+        }
+
+        // ============================================================================
+        // GAME STATE, DOJO TUTORIAL & 5-STAGE TOURNAMENT WITH UNIQUE ARENAS
+        // ============================================================================
+        const game = {
+            paused: true,
+            mode: 'tutorial', // 'tutorial' or 'tourney'
+            tutStage: 0,
+            tutCount: 0,
+            stageIndex: 0,
+            timer: 99,
+            lastTimerTick: 0,
+            hitStop: 0,
+            shake: 0,
+            keys: {}
+        };
+
+        const DOJO_LESSONS = [
+            {
+                title: "DOJO LESSON 1/4: FOOTWORK & SHADOW DASH",
+                desc: "Use <b>A / D</b> to Move, <b>W</b> to Jump, and press <b>SPACE</b> to Shadow-Dash <b>3 Times</b>!",
+                goal: 3
+            },
+            {
+                title: "DOJO LESSON 2/4: KATANA COMBOS & HEAVY KICK",
+                desc: "Close the distance! Press <b>J</b> repeatedly for a 3-Hit Katana Combo or <b>K</b> for a Heavy Kick (Land <b>4 Hits</b>).",
+                goal: 4
+            },
+            {
+                title: "DOJO LESSON 3/4: GUARD PARRY & SHURIKEN",
+                desc: "Hold <b>S (Down)</b> to Guard an enemy attack OR press <b>L</b> to hit the opponent with <b>2 Shadow Shurikens</b>!",
+                goal: 2
+            },
+            {
+                title: "DOJO LESSON 4/4: SHADOW FORM ERUPTION [R]",
+                desc: "Your Shadow Bar is full! Press <b>R</b> near your opponent to unleash <b>Shadow Eruption</b>!",
+                goal: 1
+            }
+        ];
+
+        const TOURNAMENT_BOSSES = [
+            { name: "STAGE 1: LYNX [ASSASSIN]", arenaName: "BAMBOO FOREST", theme: "bamboo", color: "#00ff88", hp: 100, aggro: 0.025 },
+            { name: "STAGE 2: ITU [MASTER RONIN]", arenaName: "FLOATING SHRINE", theme: "shrine", color: "#ffcc00", hp: 120, aggro: 0.04 },
+            { name: "STAGE 3: EMPEROR TITAN", arenaName: "VOLCANO FORGE", theme: "volcano", color: "#ff3300", hp: 145, aggro: 0.055 },
+            { name: "STAGE 4: SHOGUN [WARLORD]", arenaName: "BURNING FORTRESS", theme: "fortress", color: "#ff9900", hp: 170, aggro: 0.07 },
+            { name: "FINAL STAGE: SHADOW MIND", arenaName: "ECLIPSE VOID", theme: "void", color: "#b829ff", hp: 200, aggro: 0.085 }
+        ];
+
+        let p1 = new Fighter(true, 260, "KENSEI", "#00f3ff");
+        let p2 = new Fighter(false, 760, "SHADOW MASTER", "#ff1e56");
+
+        function startDojoTutorial() {
+            game.mode = 'tutorial';
+            game.tutStage = 0;
+            game.tutCount = 0;
+            buildArenaBackdrop('dojo');
+            resetMatch("SHADOW SENSEI", "#b829ff", 100);
+            document.getElementById('tutorial-panel').classList.remove('hidden');
+            document.getElementById('btn-skip-tut').classList.remove('hidden');
+            document.getElementById('round-badge').innerText = "TWILIGHT DOJO";
+            setupDojoStage(0);
+        }
+
+        function setupDojoStage(idx) {
+            game.tutStage = idx;
+            game.tutCount = 0;
+            const lesson = DOJO_LESSONS[idx];
+            document.getElementById('tut-step').innerText = lesson.title;
+            document.getElementById('tut-text').innerHTML = lesson.desc;
+            document.getElementById('tut-progress').innerText = `0 / ${lesson.goal}`;
+
+            if (idx === 3) {
+                p1.shadow = 100;
+                updateHUD();
+            }
+        }
+
+        function advanceTutorial(amount = 1) {
+            if (game.mode !== 'tutorial') return;
+            game.tutCount += amount;
+            const lesson = DOJO_LESSONS[game.tutStage];
+            document.getElementById('tut-progress').innerText = `${Math.min(game.tutCount, lesson.goal)} / ${lesson.goal}`;
+
+            if (game.tutCount >= lesson.goal) {
+                sfx.gong();
+                p2.hp = 100;
+                if (game.tutStage + 1 < DOJO_LESSONS.length) {
+                    setupDojoStage(game.tutStage + 1);
+                } else {
+                    startTournament(0);
+                }
+            }
+        }
+
+        function startTournament(stageIdx = 0) {
+            game.mode = 'tourney';
+            game.stageIndex = stageIdx;
+            const boss = TOURNAMENT_BOSSES[stageIdx];
+            buildArenaBackdrop(boss.theme);
+            document.getElementById('tutorial-panel').classList.add('hidden');
+            document.getElementById('btn-skip-tut').classList.add('hidden');
+            document.getElementById('round-badge').innerText = `${boss.arenaName} (${stageIdx + 1}/${TOURNAMENT_BOSSES.length})`;
+            resetMatch(boss.name, boss.color, boss.hp);
+            sfx.gong();
+        }
+
+        function resetMatch(enemyName, enemyColor, enemyMaxHp) {
+            p1 = new Fighter(true, 260, "KENSEI", "#00f3ff");
+            p2 = new Fighter(false, 760, enemyName, enemyColor);
+            p2.maxHp = enemyMaxHp;
+            p2.hp = enemyMaxHp;
+            projectiles = [];
+            slashArcs = [];
+            shadowPillars = [];
+            game.timer = 99;
+            game.lastTimerTick = performance.now();
+            const p2NameEl = document.getElementById('p2-name');
+            p2NameEl.innerText = enemyName;
+            p2NameEl.style.color = enemyColor;
+            updateHUD();
+        }
+
+        function updateHUD() {
+            const p1Pct = Math.max(0, Math.round((p1.hp / p1.maxHp) * 100));
+            const p2Pct = Math.max(0, Math.round((p2.hp / p2.maxHp) * 100));
+            document.getElementById('p1-hp').style.width = `${p1Pct}%`;
+            document.getElementById('p2-hp').style.width = `${p2Pct}%`;
+            document.getElementById('p1-hp-txt').innerText = `${p1Pct}%`;
+            document.getElementById('p2-hp-txt').innerText = `${p2Pct}%`;
+            document.getElementById('p1-shadow').style.width = `${p1.shadow}%`;
+            document.getElementById('p2-shadow').style.width = `${p2.shadow}%`;
+        }
+
+        // ============================================================================
+        // INPUT HANDLING & AI CONTROLLER
+        // ============================================================================
+        window.addEventListener('keydown', e => {
+            const code = e.code;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) {
+                e.preventDefault();
+            }
+            if (game.keys[code]) return;
+            game.keys[code] = true;
+
+            if (code === 'KeyM') sfx.toggleMute();
+            if (game.paused) return;
+
+            if (code === 'KeyT' && game.mode === 'tutorial') {
+                startTournament(0);
+                return;
+            }
+
+            // Jump
+            if ((code === 'KeyW' || code === 'ArrowUp') && p1.grounded && p1.state !== 'attack' && p1.state !== 'hit') {
+                p1.vy = -14.5;
+                p1.state = 'jump';
+                if (game.mode === 'tutorial' && game.tutStage === 0) advanceTutorial(1);
+            }
+
+            // Shadow Dash
+            if (code === 'Space') {
+                const dir = (game.keys['KeyA'] || game.keys['ArrowLeft']) ? -1 : ((game.keys['KeyD'] || game.keys['ArrowRight']) ? 1 : p1.facing);
+                p1.triggerDash(dir);
+                if (game.mode === 'tutorial' && game.tutStage === 0) advanceTutorial(1);
+            }
+
+            // 3-Hit Katana Combo [J]
+            if (code === 'KeyJ') {
+                if (p1.comboWindow > 0 && p1.comboStep === 1) {
+                    p1.comboStep = 2;
+                    p1.comboWindow = 28;
+                    p1.startAttack('slash2');
+                } else if (p1.comboWindow > 0 && p1.comboStep === 2) {
+                    p1.comboStep = 0;
+                    p1.comboWindow = 0;
+                    p1.startAttack('slash3');
+                } else if (p1.state !== 'attack') {
+                    p1.comboStep = 1;
+                    p1.comboWindow = 28;
+                    p1.startAttack('slash1');
+                }
+            }
+
+            // Heavy Spinning Kick [K]
+            if (code === 'KeyK' && p1.state !== 'attack') {
+                p1.startAttack('kick');
+            }
+
+            // Kunai / Shuriken [L]
+            if (code === 'KeyL') {
+                p1.throwShuriken();
+            }
+
+            // Shadow Eruption [R]
+            if (code === 'KeyR' && (p1.shadow >= 100 || (game.mode === 'tutorial' && game.tutStage === 3))) {
+                p1.startAttack('eruption');
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            game.keys[e.code] = false;
+        });
+
+        function updatePlayerInput() {
+            if (p1.state === 'attack' || p1.state === 'hit' || p1.state === 'dash') return;
+
+            const left = game.keys['KeyA'] || game.keys['ArrowLeft'];
+            const right = game.keys['KeyD'] || game.keys['ArrowRight'];
+            const down = game.keys['KeyS'] || game.keys['ArrowDown'];
+
+            if (down && p1.grounded) {
+                p1.state = 'guard';
+                p1.vx *= 0.5;
+            } else if (left) {
+                p1.vx = -5.5;
+                p1.state = p1.grounded ? 'run' : 'jump';
+            } else if (right) {
+                p1.vx = 5.5;
+                p1.state = p1.grounded ? 'run' : 'jump';
+            } else {
+                p1.state = p1.grounded ? 'idle' : 'jump';
+            }
+        }
+
+        function updateAI() {
+            if (p2.state === 'attack' || p2.state === 'hit' || p2.state === 'dash') return;
+
+            const dist = Math.abs(p1.x - p2.x);
+
+            if (game.mode === 'tutorial') {
+                if (game.tutStage === 2 && dist < 110 && Math.random() < 0.03) {
+                    p2.startAttack('slash1');
+                } else if (dist > 140) {
+                    p2.vx = p2.facing * 3;
+                    p2.state = 'run';
+                } else {
+                    p2.state = 'idle';
+                }
+                return;
+            }
+
+            const boss = TOURNAMENT_BOSSES[game.stageIndex];
+            if (p2.shadow >= 100 && dist < 180) {
+                p2.startAttack('eruption');
+                return;
+            }
+
+            if (dist > 115) {
+                p2.vx = p2.facing * 4.6;
+                p2.state = 'run';
+                if (dist > 280 && Math.random() < 0.015) p2.throwShuriken();
+            } else {
+                p2.state = 'idle';
+                if (p1.state === 'attack' && Math.random() < 0.25) {
+                    p2.state = 'guard';
+                } else if (Math.random() < boss.aggro) {
+                    const roll = Math.random();
+                    if (roll < 0.45) p2.startAttack('slash1');
+                    else if (roll < 0.75) p2.startAttack('slash2');
+                    else p2.startAttack('kick');
+                }
+            }
+        }
+
+        // ============================================================================
+        // MAIN UPDATE & RENDER LOOP
+        // ============================================================================
+        function finishMatch(playerWon) {
+            game.paused = true;
+            document.getElementById('end-title').innerText = playerWon ? "TOURNAMENT CHAMPION" : "DEFEATED IN THE ARENA";
+            document.getElementById('end-sub').innerText = playerWon
+                ? "YOU CONQUERED ALL 5 SHADOW ARENAS"
+                : "THE SHADOW WARLORD PREVAILED";
+            document.getElementById('end-stats').innerHTML = `
+    Arenas Conquered: <b style="color:var(--cyan)">${playerWon ? TOURNAMENT_BOSSES.length : game.stageIndex} / ${TOURNAMENT_BOSSES.length}</b><br>
+    Remaining Health: <b style="color:var(--emerald)">${Math.max(0, Math.round(p1.hp))}%</b><br>
+    Shadow Energy Mastery: <b style="color:var(--gold)">COMPLETE</b>
+  `;
+            document.getElementById('end-overlay').classList.remove('hidden');
+        }
+
+        function updateGame() {
+            if (game.paused) return;
+
+            if (game.hitStop > 0) {
+                game.hitStop--;
+                return;
+            }
+
+            const now = performance.now();
+            if (now - game.lastTimerTick >= 1000) {
+                game.lastTimerTick = now;
+                if (game.mode === 'tourney' && game.timer > 0) {
+                    game.timer--;
+                    document.getElementById('timer-box').innerText = String(game.timer).padStart(2, '0');
+                }
+            }
+
+            updatePlayerInput();
+            updateAI();
+
+            p1.update(p2);
+            p2.update(p1);
+
+            const overlap = 48 - Math.abs(p1.x - p2.x);
+            if (overlap > 0 && Math.abs(p1.y - p2.y) < 70 && p1.state !== 'dash' && p2.state !== 'dash') {
+                const push = overlap / 2;
+                if (p1.x < p2.x) { p1.x -= push; p2.x += push; }
+                else { p1.x += push; p2.x -= push; }
+            }
+
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const pr = projectiles[i];
+                pr.x += pr.vx;
+                pr.rot += 0.35;
+
+                const target = pr.owner.isPlayer ? p2 : p1;
+                if (target.state !== 'dash' && Math.abs(pr.x - target.x) < 30 && Math.abs(pr.y - (target.y - 60)) < 50) {
+                    projectiles.splice(i, 1);
+                    if (target.state === 'guard') {
+                        sfx.clankParry();
+                        spawnHitSparks(pr.x, pr.y, '#00f3ff', 10);
+                    } else {
+                        target.hp = Math.max(0, target.hp - 7);
+                        target.state = 'hit';
+                        target.stateTimer = 10;
+                        sfx.hitConfirm(false);
+                        spawnHitSparks(pr.x, pr.y, pr.color, 14);
+                        spawnFloatingText(target.x, target.y - 105, "-7", pr.color);
+                        if (pr.owner.isPlayer && game.mode === 'tutorial' && game.tutStage === 2) {
+                            advanceTutorial(1);
+                        }
+                    }
+                    updateHUD();
+                    continue;
+                }
+
+                if (pr.x < 0 || pr.x > canvas.width) projectiles.splice(i, 1);
+            }
+
+            if (game.mode === 'tutorial' && p2.hp < 25) {
+                p2.hp = 100;
+                updateHUD();
+            }
+
+            if (game.mode === 'tourney') {
+                if (p2.hp <= 0) {
+                    if (game.stageIndex + 1 < TOURNAMENT_BOSSES.length) {
+                        startTournament(game.stageIndex + 1);
+                    } else {
+                        finishMatch(true);
+                    }
+                } else if (p1.hp <= 0 || game.timer <= 0) {
+                    finishMatch(false);
+                }
+            }
+
+            for (let i = slashArcs.length - 1; i >= 0; i--) {
+                slashArcs[i].life -= 0.11;
+                if (slashArcs[i].life <= 0) slashArcs.splice(i, 1);
+            }
+            for (let i = shadowPillars.length - 1; i >= 0; i--) {
+                shadowPillars[i].life -= 0.05;
+                if (shadowPillars[i].life <= 0) shadowPillars.splice(i, 1);
+            }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.vy += 0.25;
+                pt.life -= 0.04;
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].y -= 1.2;
+                floatingTexts[i].life -= 0.03;
+                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            // Update Arena-Specific Ambient Weather Particles
+            const risingEmbers = currentArenaTheme === 'volcano' || currentArenaTheme === 'fortress' || currentArenaTheme === 'void';
+            for (const sk of sakuraPetals) {
+                sk.x += sk.vx;
+                sk.y += risingEmbers ? -Math.abs(sk.vy) * 1.4 : sk.vy;
+                sk.rot += 0.03;
+                if (sk.x < -10) sk.x = canvas.width + 10;
+                if (!risingEmbers && sk.y > canvas.height + 10) sk.y = -10;
+                if (risingEmbers && sk.y < -10) sk.y = GROUND_Y;
+            }
+
+            if (game.shake > 0) game.shake *= 0.84;
+        }
+
+        function renderGame() {
+            ctx.save();
+            if (game.shake > 0.5) {
+                ctx.translate((Math.random() - 0.5) * game.shake, (Math.random() - 0.5) * game.shake);
+            }
+
+            // Draw Active Stage Arena Backdrop
+            ctx.drawImage(bgCanvas, 0, 0);
+
+            // Draw Arena-Specific Weather Particles (Petals, Fireflies, Embers, Void Sparks)
+            let weatherColor = 'rgba(255, 165, 210, 0.75)';
+            if (currentArenaTheme === 'bamboo') weatherColor = 'rgba(120, 255, 190, 0.8)';
+            else if (currentArenaTheme === 'shrine') weatherColor = 'rgba(255, 215, 90, 0.8)';
+            else if (currentArenaTheme === 'volcano') weatherColor = 'rgba(255, 90, 20, 0.9)';
+            else if (currentArenaTheme === 'fortress') weatherColor = 'rgba(255, 180, 40, 0.85)';
+            else if (currentArenaTheme === 'void') weatherColor = 'rgba(195, 70, 255, 0.85)';
+
+            ctx.fillStyle = weatherColor;
+            for (const sk of sakuraPetals) {
+                ctx.save();
+                ctx.translate(sk.x, sk.y);
+                ctx.rotate(sk.rot);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, sk.size, sk.size * 0.55, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Draw Shadow Eruption Pillars
+            for (const sp of shadowPillars) {
+                ctx.save();
+                ctx.globalAlpha = sp.life;
+                const grad = ctx.createLinearGradient(sp.x, 0, sp.x, GROUND_Y);
+                grad.addColorStop(0, 'rgba(0, 243, 255, 0)');
+                grad.addColorStop(0.5, 'rgba(184, 41, 255, 0.85)');
+                grad.addColorStop(1, '#00f3ff');
+                ctx.fillStyle = grad;
+                ctx.fillRect(sp.x - sp.w / 2, 80, sp.w, GROUND_Y - 80);
+                ctx.restore();
+            }
+
+            // Draw Fighters
+            p2.draw();
+            p1.draw();
+
+            // Draw Glowing Katana Slash Arcs
+            for (const arc of slashArcs) {
+                ctx.save();
+                ctx.translate(arc.x, arc.y);
+                ctx.scale(arc.facing, 1);
+                ctx.globalAlpha = arc.life;
+                ctx.strokeStyle = arc.color;
+                ctx.shadowColor = arc.color;
+                ctx.shadowBlur = 18;
+                ctx.lineWidth = 14 * arc.life;
+                ctx.beginPath();
+                ctx.arc(0, 0, arc.radius, arc.startAng, arc.endAng, arc.startAng > arc.endAng);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Draw Shurikens
+            for (const pr of projectiles) {
+                ctx.save();
+                ctx.translate(pr.x, pr.y);
+                ctx.rotate(pr.rot);
+                ctx.strokeStyle = pr.color;
+                ctx.fillStyle = '#fff';
+                ctx.lineWidth = 2;
+                for (let k = 0; k < 4; k++) {
+                    ctx.rotate(Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(14, -4);
+                    ctx.lineTo(18, 0);
+                    ctx.lineTo(14, 4);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw Hit Sparks
+            for (const pt of particles) {
+                ctx.globalAlpha = Math.max(0, pt.life);
+                ctx.fillStyle = pt.color;
+                ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+            }
+            ctx.globalAlpha = 1;
+
+            // Draw Floating Damage & Critical Popups
+            for (const ft of floatingTexts) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.font = 'bold 18px monospace';
+                ctx.fillStyle = ft.color;
+                ctx.shadowColor = '#000';
+                ctx.shadowBlur = 6;
+                ctx.fillText(ft.text, ft.x - 24, ft.y);
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            updateGame();
+            renderGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // UI Buttons
+        document.getElementById('btn-start-tut').addEventListener('click', () => {
+            sfx.init();
+            document.getElementById('start-overlay').classList.add('hidden');
+            game.paused = false;
+            startDojoTutorial();
+        });
+
+        document.getElementById('btn-start-tourney').addEventListener('click', () => {
+            sfx.init();
+            document.getElementById('start-overlay').classList.add('hidden');
+            game.paused = false;
+            startTournament(0);
+        });
+
+        document.getElementById('btn-skip-tut').addEventListener('click', () => {
+            if (!game.paused) startTournament(0);
+        });
+
+        document.getElementById('btn-mute').addEventListener('click', () => {
+            sfx.toggleMute();
+        });
+
+        document.getElementById('btn-replay').addEventListener('click', () => {
+            document.getElementById('end-overlay').classList.add('hidden');
+            game.paused = false;
+            startTournament(0);
+        });
+
+        document.getElementById('btn-replay-tut').addEventListener('click', () => {
+            document.getElementById('end-overlay').classList.add('hidden');
+            game.paused = false;
+            startDojoTutorial();
+        });
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+
+</html>
